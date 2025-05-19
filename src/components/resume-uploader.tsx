@@ -7,6 +7,16 @@ import { UploadCloud, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { extractSkillsFromResume } from "@/ai/flows/extract-skills-flow";
+
+const readFileAsDataURI = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};
 
 export function ResumeUploader() {
   const [loading, setLoading] = useState(false);
@@ -31,41 +41,29 @@ export function ResumeUploader() {
       setError(null);
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append("file", file);
-
       try {
-        // IMPORTANT: Replace with your actual backend URL in a real deployment
-        const response = await fetch("http://localhost:8000/api/extract", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: "Failed to extract skills. Server returned an error." }));
-          throw new Error(errorData.detail || `HTTP error ${response.status}`);
-        }
-
-        const json = await response.json();
+        const resumeDataUri = await readFileAsDataURI(file);
+        const result = await extractSkillsFromResume({ resumeDataUri });
         
-        if (!json.skills || !Array.isArray(json.skills)) {
-          throw new Error("Invalid response format from server.");
+        if (!result.skills || !Array.isArray(result.skills)) {
+          console.error("Invalid response format from AI skill extractor:", result);
+          throw new Error("AI skill extractor returned an unexpected data format.");
         }
 
         toast({
           title: "Skills Extracted!",
-          description: "Your skills have been successfully extracted.",
+          description: "Your skills have been successfully extracted by AI.",
         });
-        router.push(`/results?skills=${encodeURIComponent(JSON.stringify(json.skills))}`);
+        router.push(`/results?skills=${encodeURIComponent(JSON.stringify(result.skills))}`);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-        setError(`Failed to extract skills: ${errorMessage}`);
+        setError(`Failed to extract skills using AI: ${errorMessage}`);
         toast({
           title: "Extraction Failed",
-          description: errorMessage,
+          description: `AI extraction failed: ${errorMessage}`,
           variant: "destructive",
         });
-        console.error("Extraction error:", err);
+        console.error("AI Extraction error:", err);
       } finally {
         setLoading(false);
       }
@@ -131,7 +129,7 @@ export function ResumeUploader() {
       {loading && (
         <div className="flex items-center text-primary">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          <p className="text-lg">Extracting skills, please wait...</p>
+          <p className="text-lg">Extracting skills with AI, please wait...</p>
         </div>
       )}
 
