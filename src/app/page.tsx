@@ -37,9 +37,9 @@ export default function LandingPage() {
         className="mb-12"
       >
         <Image
-          src="https://placehold.co/600x400.png"
-          alt="Abstract representation of skills and connections"
-          data-ai-hint="resume documents"
+          src="https://www.ag5.com/wp-content/uploads/2018/11/What-are-skills-header.png"
+          alt="Conceptual image representing various skills"
+          data-ai-hint="skills concept"
           width={600}
           height={400}
           className="rounded-xl shadow-2xl object-cover"
@@ -65,7 +65,7 @@ export default function LandingPage() {
       </motion.div>
       
       <footer className="absolute bottom-6 text-center w-full text-primary-foreground/70 text-sm">
-        Powered by AI &copy; {currentYear || new Date().getFullYear()} SkillMapper
+        Powered by AI &copy; {currentYear !== null ? currentYear : new Date().getFullYear()} SkillMapper
       </footer>
     </div>
   );
