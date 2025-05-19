@@ -5,8 +5,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary/80 via-primary to-accent/70 text-primary-foreground p-6 overflow-hidden">
       <motion.div
@@ -58,7 +65,7 @@ export default function LandingPage() {
       </motion.div>
       
       <footer className="absolute bottom-6 text-center w-full text-primary-foreground/70 text-sm">
-        Powered by AI &copy; {new Date().getFullYear()} SkillMapper
+        Powered by AI &copy; {currentYear || new Date().getFullYear()} SkillMapper
       </footer>
     </div>
   );
