@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
@@ -7,13 +8,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tag, ListChecks, ArrowLeft, TrendingUp, Info, X as CloseIcon } from "lucide-react";
+import { Tag, ListChecks, ArrowLeft, TrendingUp, Info, X as CloseIcon, Loader2 as SpinnerIcon } from "lucide-react"; // Renamed Loader2 to avoid conflict
 import { Badge } from "@/components/ui/badge";
 
 interface Skill {
   name: string;
-  level: number; // Assuming level is a numeric representation of proficiency or count
-  description: string;
+  level: number;
+  description: string; // UI expects a string, will default to "" if null/undefined
 }
 
 function ResultsContent() {
@@ -27,32 +28,70 @@ function ResultsContent() {
     const skillsParam = searchParams.get("skills");
     if (skillsParam) {
       try {
-        const parsedSkills = JSON.parse(decodeURIComponent(skillsParam));
-        if (Array.isArray(parsedSkills) && parsedSkills.every(s => 
-            typeof s.name === 'string' && 
-            typeof s.level === 'number' &&
-            typeof s.description === 'string' // Ensure description is present
-        )) {
-          setSkills(parsedSkills);
+        const parsedSkillsInput = JSON.parse(decodeURIComponent(skillsParam));
+        
+        if (Array.isArray(parsedSkillsInput)) {
+          const validatedSkills: Skill[] = [];
+          for (const s of parsedSkillsInput) {
+            let currentName: string | undefined = undefined;
+            let currentLevel: number | undefined = undefined;
+            let currentDescription: string = ""; // Default to empty string
+
+            if (typeof s.name === 'string' && s.name.trim() !== '') {
+              currentName = s.name.trim();
+            }
+
+            if (typeof s.level === 'number') {
+              currentLevel = s.level;
+            } else if (typeof s.level === 'string') {
+              const parsedNum = parseInt(s.level, 10);
+              if (!isNaN(parsedNum)) {
+                currentLevel = parsedNum;
+              }
+            }
+            
+            if (typeof s.description === 'string') {
+              currentDescription = s.description;
+            } else if (s.description === null) { // Handle null description
+               currentDescription = "";
+            }
+            // If s.description is undefined, currentDescription remains ""
+
+            if (currentName !== undefined && currentLevel !== undefined) {
+              validatedSkills.push({
+                name: currentName,
+                level: currentLevel,
+                description: currentDescription,
+              });
+            } else {
+              console.warn("Invalid skill data encountered and skipped:", s);
+            }
+          }
+
+          if (validatedSkills.length > 0 || parsedSkillsInput.length === 0) {
+            setSkills(validatedSkills);
+          } else {
+            console.error("All parsed skills were invalid. Original data:", parsedSkillsInput);
+            router.replace("/upload");
+          }
         } else {
-          console.error("Parsed skills data is not in the expected format (name, level, description):", parsedSkills);
-          router.replace("/upload"); 
+          console.error("Parsed skills data is not an array:", parsedSkillsInput);
+          router.replace("/upload");
         }
       } catch (error) {
         console.error("Failed to parse skills from query params:", error);
-        router.replace("/upload"); 
+        router.replace("/upload");
       }
-    } else if (skills.length === 0) { 
-       // router.replace("/upload"); // Redirect if no skills data -  Commented out to prevent redirect when skills are empty but not due to error
     }
+    // No specific redirection if skillsParam is missing, will fall through to "No Skills Data" if skills array is empty.
     setIsLoading(false);
-  }, [searchParams, router, skills.length]);
+  }, [searchParams, router]);
 
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <SpinnerIcon className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-lg text-muted-foreground">Loading results...</p>
       </div>
     );
@@ -106,7 +145,7 @@ function ResultsContent() {
               <div className="flex flex-wrap gap-3">
                 {skills.map((skill, index) => (
                   <motion.div
-                    key={`${skill.name}-${index}`}
+                    key={`${skill.name}-${index}`} // Ensure unique key if names can repeat
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -134,7 +173,7 @@ function ResultsContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="my-8" // Use my-8 for consistent spacing
+            className="my-8"
           >
             <Card className="shadow-lg border-primary/50">
               <CardHeader>
@@ -206,30 +245,31 @@ function ResultsContent() {
   );
 }
 
-function Loader2({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
-  );
-}
+// Using SpinnerIcon imported from lucide-react as Loader2
+// function Loader2({ className }: { className?: string }) { // Original Loader2 component, now replaced by SpinnerIcon
+//   return (
+//     <svg
+//       xmlns="http://www.w3.org/2000/svg"
+//       width="24"
+//       height="24"
+//       viewBox="0 0 24 24"
+//       fill="none"
+//       stroke="currentColor"
+//       strokeWidth="2"
+//       strokeLinecap="round"
+//       strokeLinejoin="round"
+//       className={className}
+//     >
+//       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+//     </svg>
+//   );
+// }
 
 export default function ResultsPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <SpinnerIcon className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-lg text-muted-foreground">Loading results...</p>
       </div>
     }>
@@ -237,3 +277,5 @@ export default function ResultsPage() {
     </Suspense>
   );
 }
+
+    
