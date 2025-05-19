@@ -65,7 +65,7 @@ export default function LandingPage() {
       </motion.div>
       
       <footer className="absolute bottom-6 text-center w-full text-primary-foreground/70 text-sm">
-        Powered by AI &copy; {currentYear !== null ? currentYear : new Date().getFullYear()} SkillMapper
+        {/* Footer content removed as per request */}
       </footer>
     </div>
   );
